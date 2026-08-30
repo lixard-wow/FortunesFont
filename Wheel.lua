@@ -9,6 +9,8 @@ local MIN_SCALE = 0.55
 local MAX_SCALE = 1.15
 local SPIN_DURATION = 3.4
 local LOOPS = 5
+local MARQUEE_DOT_COUNT = 20
+local MARQUEE_DOT_SPACING = 12
 
 local frame, viewport, resultText, spinButton
 local items = {}
@@ -17,6 +19,7 @@ local spinning = false
 local elapsed = 0
 local startPos = 0
 local targetPos = 0
+local winnerItem
 
 local function EaseOutQuart(t)
 	local inv = 1 - t
@@ -24,16 +27,42 @@ local function EaseOutQuart(t)
 end
 
 local function CreateItemFrame(parent)
+	local UIKit = addon.UIKit
+
 	local f = CreateFrame("Frame", nil, parent)
-	f:SetSize(220, 40)
+	f:SetSize(230, 42)
 
-	f.bg = f:CreateTexture(nil, "BACKGROUND")
-	f.bg:SetAllPoints()
-	f.bg:SetColorTexture(0, 0, 0, 0.35)
+	f.border = UIKit.CreateFlatTexture(f, "BORDER", UIKit.COLOR_GOLD)
+	f.border:SetAllPoints()
 
-	f.text = f:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-	f.text:SetPoint("CENTER")
-	f.text:SetJustifyH("CENTER")
+	f.bg = UIKit.CreateFlatTexture(f, "ARTWORK", UIKit.COLOR_PANEL)
+	f.bg:SetPoint("TOPLEFT", 1, -1)
+	f.bg:SetPoint("BOTTOMRIGHT", -1, 1)
+
+	f.glow = UIKit.CreateFlatTexture(f, "OVERLAY", UIKit.COLOR_GOLD_BRIGHT)
+	f.glow:SetPoint("TOPLEFT", -3, 3)
+	f.glow:SetPoint("BOTTOMRIGHT", 3, -3)
+	f.glow:SetAlpha(0)
+	f.glow:SetDrawLayer("OVERLAY", 7)
+
+	f.glowAnim = f.glow:CreateAnimationGroup()
+	f.glowAnim:SetLooping("BOUNCE")
+	local pulse = f.glowAnim:CreateAnimation("Alpha")
+	pulse:SetFromAlpha(0)
+	pulse:SetToAlpha(0.55)
+	pulse:SetDuration(0.35)
+	f.pulseAnim = pulse
+
+	f.icon = f:CreateTexture(nil, "ARTWORK", nil, 1)
+	f.icon:SetSize(30, 30)
+	f.icon:SetPoint("LEFT", 6, 0)
+	f.icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+
+	f.text = f:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+	f.text:SetPoint("LEFT", f.icon, "RIGHT", 8, 0)
+	f.text:SetPoint("RIGHT", -6, 0)
+	f.text:SetJustifyH("LEFT")
+	f.text:SetJustifyV("MIDDLE")
 
 	return f
 end
@@ -44,41 +73,86 @@ local function EnsureItemFrames(count)
 	end
 end
 
+local function StopWinnerGlow()
+	if winnerItem then
+		winnerItem.glowAnim:Stop()
+		winnerItem.glow:SetAlpha(0)
+		winnerItem = nil
+	end
+end
+
 local function BuildFrame()
-	frame = CreateFrame("Frame", "FortunesFontWheel", UIParent, "BasicFrameTemplateWithInset")
-	frame:SetSize(280, 380)
+	local UIKit = addon.UIKit
+
+	frame = UIKit.CreatePanel(UIParent, 300, 430)
 	frame:SetPoint("CENTER")
+	frame:SetName("FortunesFontWheel")
 	frame:SetFrameStrata("DIALOG")
 	frame:SetMovable(true)
 	frame:EnableMouse(true)
-	frame:RegisterForDrag("LeftButton")
-	frame:SetScript("OnDragStart", frame.StartMoving)
-	frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
+
+	local titleBar = UIKit.CreateTitleBar(frame, "Fortune's Font")
+	titleBar:EnableMouse(true)
+	titleBar:RegisterForDrag("LeftButton")
+	titleBar:SetScript("OnDragStart", function()
+		frame:StartMoving()
+	end)
+	titleBar:SetScript("OnDragStop", function()
+		frame:StopMovingOrSizing()
+	end)
+
+	local closeButton = UIKit.CreateCloseButton(titleBar)
+	closeButton:SetPoint("RIGHT", -4, 0)
+	closeButton:SetScript("OnClick", function()
+		frame:Hide()
+	end)
+
+	_G.FortunesFontWheel = frame
 	tinsert(UISpecialFrames, "FortunesFontWheel")
 
-	frame.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-	frame.title:SetPoint("TOP", 0, -8)
-	frame.title:SetText("Fortune's Font")
+	local marqueeTopHolder = CreateFrame("Frame", nil, frame)
+	marqueeTopHolder:SetSize(260, 10)
+	marqueeTopHolder:SetPoint("TOP", 0, -38)
+	UIKit.CreateMarquee(marqueeTopHolder, MARQUEE_DOT_COUNT, MARQUEE_DOT_SPACING)
 
-	viewport = CreateFrame("Frame", nil, frame)
-	viewport:SetSize(240, VIEW_HALF_HEIGHT * 2)
-	viewport:SetPoint("TOP", 0, -34)
+	viewport = UIKit.CreatePanel(frame, 260, VIEW_HALF_HEIGHT * 2)
+	viewport:SetPoint("TOP", marqueeTopHolder, "BOTTOM", 0, -6)
 	viewport:SetClipsChildren(true)
 
-	local centerLine = viewport:CreateTexture(nil, "ARTWORK")
-	centerLine:SetColorTexture(1, 0.82, 0, 0.9)
-	centerLine:SetPoint("LEFT", -10, 0)
-	centerLine:SetPoint("RIGHT", 10, 0)
+	local marqueeBottomHolder = CreateFrame("Frame", nil, frame)
+	marqueeBottomHolder:SetSize(260, 10)
+	marqueeBottomHolder:SetPoint("TOP", viewport, "BOTTOM", 0, -6)
+	UIKit.CreateMarquee(marqueeBottomHolder, MARQUEE_DOT_COUNT, MARQUEE_DOT_SPACING)
+
+	local glowBar = UIKit.CreateFlatTexture(viewport, "ARTWORK", UIKit.COLOR_GOLD)
+	glowBar:SetPoint("LEFT", viewport, "LEFT", 0, 0)
+	glowBar:SetPoint("RIGHT", viewport, "RIGHT", 0, 0)
+	glowBar:SetHeight(30)
+	glowBar:SetAlpha(0.12)
+
+	local centerLine = UIKit.CreateFlatTexture(viewport, "OVERLAY", UIKit.COLOR_GOLD_BRIGHT)
+	centerLine:SetPoint("LEFT", viewport, "LEFT", 0, 0)
+	centerLine:SetPoint("RIGHT", viewport, "RIGHT", 0, 0)
 	centerLine:SetHeight(2)
 
-	resultText = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
-	resultText:SetPoint("TOP", viewport, "BOTTOM", 0, -10)
+	local arrowLeft = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+	arrowLeft:SetPoint("RIGHT", viewport, "LEFT", -2, 0)
+	arrowLeft:SetText("|cffd4ae36\226\150\184|r")
+
+	local arrowRight = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
+	arrowRight:SetPoint("LEFT", viewport, "RIGHT", 2, 0)
+	arrowRight:SetText("|cffd4ae36\226\151\132|r")
+
+	resultText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+	resultText:SetPoint("TOP", marqueeBottomHolder, "BOTTOM", 0, -10)
+	resultText:SetPoint("LEFT", 12, 0)
+	resultText:SetPoint("RIGHT", -12, 0)
+	resultText:SetJustifyH("CENTER")
+	resultText:SetTextColor(UIKit.COLOR_GOLD_BRIGHT[1], UIKit.COLOR_GOLD_BRIGHT[2], UIKit.COLOR_GOLD_BRIGHT[3])
 	resultText:SetText("")
 
-	spinButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-	spinButton:SetSize(100, 24)
+	spinButton = UIKit.CreateButton(frame, "SPIN", 120, 30)
 	spinButton:SetPoint("BOTTOM", 0, 16)
-	spinButton:SetText("Spin")
 	spinButton:SetScript("OnClick", function()
 		Wheel:Spin()
 	end)
@@ -93,12 +167,19 @@ local function BuildFrame()
 		local pos = startPos + (targetPos - startPos) * EaseOutQuart(t)
 		Wheel:RenderAtPosition(pos)
 
+		local pulseSpeed = 0.15 + 0.35 * t
+		marqueeTopHolder:SetAlpha(0.5 + 0.5 * math.abs(math.sin(elapsed / pulseSpeed)))
+		marqueeBottomHolder:SetAlpha(0.5 + 0.5 * math.abs(math.cos(elapsed / pulseSpeed)))
+
 		if t >= 1 then
 			spinning = false
 			spinButton:Enable()
+			marqueeTopHolder:SetAlpha(1)
+			marqueeBottomHolder:SetAlpha(1)
 			local winner = sequence[targetPos + 1]
+			local winnerFrame = items[targetPos + 1]
 			if winner then
-				Wheel:AnnounceWinner(winner)
+				Wheel:AnnounceWinner(winner, winnerFrame)
 			end
 		end
 	end)
@@ -149,8 +230,21 @@ function Wheel:BuildSequence()
 	return (loops - 1) * #entries + winnerIndex
 end
 
-function Wheel:AnnounceWinner(entry)
-	resultText:SetText(("%s wins the %s +%d!"):format(entry.name, entry.dungeonName, entry.keyLevel))
+function Wheel:AnnounceWinner(entry, winnerFrame)
+	resultText:SetText(("|cffffe38a%s|r wins the |cffffe38a%s +%d|r!"):format(entry.name, entry.dungeonName, entry.keyLevel))
+
+	StopWinnerGlow()
+	if winnerFrame then
+		winnerItem = winnerFrame
+		winnerFrame.glow:SetAlpha(0.55)
+		winnerFrame.glowAnim:Play()
+		C_Timer.After(1.6, function()
+			if winnerItem == winnerFrame then
+				StopWinnerGlow()
+				winnerFrame.glow:SetAlpha(0.2)
+			end
+		end)
+	end
 
 	local channel = nil
 	if IsInRaid() then
@@ -175,6 +269,8 @@ function Wheel:Spin()
 		BuildFrame()
 	end
 
+	StopWinnerGlow()
+
 	local targetIndex = self:BuildSequence()
 	if not targetIndex then
 		UIErrorsFrame:AddMessage("Fortune's Font: no keys in the pool yet.", 1, 0.2, 0.2)
@@ -184,7 +280,14 @@ function Wheel:Spin()
 	EnsureItemFrames(#sequence)
 	for i, entry in ipairs(sequence) do
 		local item = items[i]
-		item.text:SetText(("%s\n%s +%d"):format(entry.name, entry.dungeonName, entry.keyLevel))
+		item.glow:SetAlpha(0)
+		if entry.dungeonIcon then
+			item.icon:SetTexture(entry.dungeonIcon)
+			item.icon:Show()
+		else
+			item.icon:Hide()
+		end
+		item.text:SetText(("|cffd4ae36%s|r\n%s +%d"):format(entry.name, entry.dungeonName, entry.keyLevel))
 	end
 	for i = #sequence + 1, #items do
 		items[i]:Hide()

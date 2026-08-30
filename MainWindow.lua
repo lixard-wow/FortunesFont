@@ -4,107 +4,87 @@ local MainWindow = {}
 addon.MainWindow = MainWindow
 
 local ROW_HEIGHT = 24
-local MAX_ROWS = 8
+local MAX_ROWS = 5
 
 local frame
 local rows = {}
-local nameInput, linkInput
 
 local function CreateRow(parent, index)
+	local UIKit = addon.UIKit
 	local row = CreateFrame("Frame", nil, parent)
-	row:SetSize(260, ROW_HEIGHT)
-	row:SetPoint("TOPLEFT", 10, -(index - 1) * ROW_HEIGHT - 36)
+	row:SetSize(240, ROW_HEIGHT - 2)
+	row:SetPoint("TOPLEFT", 12, -(index - 1) * ROW_HEIGHT - 40)
+
+	row.bg = UIKit.CreateFlatTexture(row, "BACKGROUND", UIKit.COLOR_PANEL)
+	row.bg:SetAllPoints()
 
 	row.nameText = row:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-	row.nameText:SetPoint("LEFT", 4, 0)
-	row.nameText:SetWidth(90)
+	row.nameText:SetPoint("LEFT", 6, 0)
+	row.nameText:SetWidth(80)
 	row.nameText:SetJustifyH("LEFT")
+	row.nameText:SetTextColor(UIKit.COLOR_GOLD_BRIGHT[1], UIKit.COLOR_GOLD_BRIGHT[2], UIKit.COLOR_GOLD_BRIGHT[3])
 
 	row.keyText = row:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
 	row.keyText:SetPoint("LEFT", row.nameText, "RIGHT", 4, 0)
-	row.keyText:SetWidth(130)
+	row.keyText:SetWidth(120)
 	row.keyText:SetJustifyH("LEFT")
+	row.keyText:SetTextColor(UIKit.COLOR_CREAM[1], UIKit.COLOR_CREAM[2], UIKit.COLOR_CREAM[3])
 
-	row.removeButton = CreateFrame("Button", nil, row, "UIPanelCloseButton")
-	row.removeButton:SetSize(18, 18)
-	row.removeButton:SetPoint("RIGHT", -4, 0)
+	row.removeButton = UIKit.CreateCloseButton(row, 16)
+	row.removeButton:SetPoint("RIGHT", -3, 0)
 
 	return row
 end
 
 local function BuildFrame()
-	frame = CreateFrame("Frame", "FortunesFontMainWindow", UIParent, "BasicFrameTemplateWithInset")
-	frame:SetSize(300, 370)
+	local UIKit = addon.UIKit
+
+	frame = UIKit.CreatePanel(UIParent, 280, 230)
 	frame:SetPoint("CENTER")
+	frame:SetName("FortunesFontMainWindow")
+	frame:SetFrameStrata("HIGH")
 	frame:SetMovable(true)
 	frame:EnableMouse(true)
-	frame:RegisterForDrag("LeftButton")
-	frame:SetScript("OnDragStart", frame.StartMoving)
-	frame:SetScript("OnDragStop", frame.StopMovingOrSizing)
-	frame:SetFrameStrata("HIGH")
-	tinsert(UISpecialFrames, "FortunesFontMainWindow")
 
-	frame.title = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-	frame.title:SetPoint("TOP", 0, -8)
-	frame.title:SetText("Fortune's Font")
+	local titleBar = UIKit.CreateTitleBar(frame, "Fortune's Font")
+	titleBar:EnableMouse(true)
+	titleBar:RegisterForDrag("LeftButton")
+	titleBar:SetScript("OnDragStart", function()
+		frame:StartMoving()
+	end)
+	titleBar:SetScript("OnDragStop", function()
+		frame:StopMovingOrSizing()
+	end)
+
+	local closeButton = UIKit.CreateCloseButton(titleBar)
+	closeButton:SetPoint("RIGHT", -4, 0)
+	closeButton:SetScript("OnClick", function()
+		frame:Hide()
+	end)
+
+	_G.FortunesFontMainWindow = frame
+	tinsert(UISpecialFrames, "FortunesFontMainWindow")
 
 	for i = 1, MAX_ROWS do
 		rows[i] = CreateRow(frame, i)
 		rows[i]:Hide()
 	end
 
-	local addLabel = frame:CreateFontString(nil, "OVERLAY", "GameFontDisableSmall")
-	addLabel:SetPoint("BOTTOMLEFT", 16, 90)
-	addLabel:SetText("Name, then shift-click a keystone to add manually")
-
-	nameInput = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
-	nameInput:SetSize(80, 20)
-	nameInput:SetAutoFocus(false)
-	nameInput:SetPoint("BOTTOMLEFT", 20, 66)
-
-	linkInput = CreateFrame("EditBox", nil, frame, "InputBoxTemplate")
-	linkInput:SetSize(140, 20)
-	linkInput:SetAutoFocus(false)
-	linkInput:SetPoint("LEFT", nameInput, "RIGHT", 14, 0)
-
-	local addButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-	addButton:SetSize(70, 22)
-	addButton:SetPoint("TOPLEFT", nameInput, "BOTTOMLEFT", 0, -6)
-	addButton:SetText("Add")
-	addButton:SetScript("OnClick", function()
-		local pname = strtrim(nameInput:GetText() or "")
-		local link = linkInput:GetText() or ""
-		local mapID, level = addon.ParseKeystoneLink(link)
-		if pname ~= "" and mapID and level then
-			addon.Pool:AddOrUpdate(pname, mapID, level, "manual")
-			nameInput:SetText("")
-			linkInput:SetText("")
-		else
-			UIErrorsFrame:AddMessage("Fortune's Font: enter a name and shift-click a keystone link.", 1, 0.2, 0.2)
-		end
-	end)
-
-	local requestButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-	requestButton:SetSize(80, 24)
-	requestButton:SetPoint("BOTTOMLEFT", 20, 16)
-	requestButton:SetText("Request")
+	local requestButton = UIKit.CreateButton(frame, "Request", 80, 24)
+	requestButton:SetPoint("BOTTOMLEFT", 12, 12)
 	requestButton:SetScript("OnClick", function()
 		addon.KeystoneSync:Request()
 		addon.ChatParser:RequestKeys()
 	end)
 
-	local spinButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-	spinButton:SetSize(80, 24)
-	spinButton:SetPoint("LEFT", requestButton, "RIGHT", 8, 0)
-	spinButton:SetText("Spin")
+	local spinButton = UIKit.CreateButton(frame, "Spin", 80, 24)
+	spinButton:SetPoint("LEFT", requestButton, "RIGHT", 6, 0)
 	spinButton:SetScript("OnClick", function()
 		addon.Wheel:Spin()
 	end)
 
-	local clearButton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-	clearButton:SetSize(80, 24)
-	clearButton:SetPoint("LEFT", spinButton, "RIGHT", 8, 0)
-	clearButton:SetText("Clear")
+	local clearButton = UIKit.CreateButton(frame, "Clear", 80, 24)
+	clearButton:SetPoint("LEFT", spinButton, "RIGHT", 6, 0)
 	clearButton:SetScript("OnClick", function()
 		addon.Pool:Clear()
 	end)

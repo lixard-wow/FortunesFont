@@ -6,14 +6,14 @@ addon.Pool = Pool
 local entries = {}
 local order = {}
 
-local function GetDungeonName(mapID)
+local function GetDungeonInfo(mapID)
 	if not mapID or mapID == 0 then
-		return nil
+		return nil, nil
 	end
-	local name = C_ChallengeMode.GetMapUIInfo(mapID)
-	return name
+	local name, _, _, texture = C_ChallengeMode.GetMapUIInfo(mapID)
+	return name, texture
 end
-addon.GetDungeonName = GetDungeonName
+addon.GetDungeonInfo = GetDungeonInfo
 
 local function NotifyChanged()
 	if addon.MainWindow then
@@ -33,12 +33,15 @@ function Pool:AddOrUpdate(playerName, mapID, keyLevel, source)
 		table.insert(order, playerName)
 	end
 
+	local dungeonName, dungeonIcon = GetDungeonInfo(mapID)
+
 	entries[playerName] = {
 		name = playerName,
 		mapID = mapID,
 		keyLevel = keyLevel,
-		source = source or "manual",
-		dungeonName = GetDungeonName(mapID) or ("Unknown Dungeon (" .. mapID .. ")"),
+		source = source or "unknown",
+		dungeonName = dungeonName or ("Unknown Dungeon (" .. mapID .. ")"),
+		dungeonIcon = dungeonIcon,
 	}
 
 	NotifyChanged()

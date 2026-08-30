@@ -34,7 +34,6 @@ local function ParseKeystoneLink(message)
 
 	return nil, nil
 end
-addon.ParseKeystoneLink = ParseKeystoneLink
 
 local chatFrame = CreateFrame("Frame")
 for _, event in ipairs(CHAT_EVENTS) do
