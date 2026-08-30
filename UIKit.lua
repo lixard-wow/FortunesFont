@@ -28,8 +28,8 @@ function UIKit.CreateFlatTexture(parent, layer, color)
 	return tex
 end
 
-function UIKit.CreatePanel(parent, width, height)
-	local panel = CreateFrame("Frame", nil, parent, "BackdropTemplate")
+function UIKit.CreatePanel(parent, width, height, name)
+	local panel = CreateFrame("Frame", name, parent, "BackdropTemplate")
 	panel:SetSize(width, height)
 
 	panel.bg = UIKit.CreateFlatTexture(panel, "BACKGROUND", UIKit.COLOR_BG)

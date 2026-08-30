@@ -39,9 +39,8 @@ end
 local function BuildFrame()
 	local UIKit = addon.UIKit
 
-	frame = UIKit.CreatePanel(UIParent, 280, 230)
+	frame = UIKit.CreatePanel(UIParent, 280, 230, "FortunesFontMainWindow")
 	frame:SetPoint("CENTER")
-	frame:SetName("FortunesFontMainWindow")
 	frame:SetFrameStrata("HIGH")
 	frame:SetMovable(true)
 	frame:EnableMouse(true)
@@ -62,7 +61,6 @@ local function BuildFrame()
 		frame:Hide()
 	end)
 
-	_G.FortunesFontMainWindow = frame
 	tinsert(UISpecialFrames, "FortunesFontMainWindow")
 
 	for i = 1, MAX_ROWS do

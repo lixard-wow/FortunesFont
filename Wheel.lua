@@ -84,9 +84,8 @@ end
 local function BuildFrame()
 	local UIKit = addon.UIKit
 
-	frame = UIKit.CreatePanel(UIParent, 300, 430)
+	frame = UIKit.CreatePanel(UIParent, 300, 430, "FortunesFontWheel")
 	frame:SetPoint("CENTER")
-	frame:SetName("FortunesFontWheel")
 	frame:SetFrameStrata("DIALOG")
 	frame:SetMovable(true)
 	frame:EnableMouse(true)
@@ -107,7 +106,6 @@ local function BuildFrame()
 		frame:Hide()
 	end)
 
-	_G.FortunesFontWheel = frame
 	tinsert(UISpecialFrames, "FortunesFontWheel")
 
 	local marqueeTopHolder = CreateFrame("Frame", nil, frame)
