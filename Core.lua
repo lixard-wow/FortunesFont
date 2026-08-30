@@ -3,6 +3,11 @@ local addonName, addon = ...
 addon.name = addonName
 addon.debug = false
 
+-- Lua 5.1's math.random defaults to a fixed seed until seeded, so without
+-- this every /reload replays the same "random" sequence - the wheel would
+-- land on the same winner every time.
+math.randomseed(time())
+
 function addon:Print(msg)
 	print("|cff33ff99Fortune's Font:|r " .. tostring(msg))
 end

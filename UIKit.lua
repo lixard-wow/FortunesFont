@@ -136,16 +136,21 @@ function UIKit.CreateButton(parent, text, width, height)
 	return btn
 end
 
-function UIKit.CreateMarquee(parent, count, spacing)
+-- Lays out dots to exactly fill `width`, so the strip can never spill past
+-- its holder regardless of dot size (each dot's pitch was previously
+-- dotSize+spacing, not spacing, which overflowed the frame).
+function UIKit.CreateMarquee(parent, width, dotSize)
+	dotSize = dotSize or 5
+	local pitch = dotSize + 6
+	local count = math.max(2, math.floor(width / pitch))
+	local usedWidth = (count - 1) * pitch + dotSize
+	local startX = (width - usedWidth) / 2
+
 	local dots = {}
 	for i = 1, count do
 		local dot = UIKit.CreateFlatTexture(parent, "OVERLAY", UIKit.COLOR_GOLD_BRIGHT)
-		dot:SetSize(5, 5)
-		if i == 1 then
-			dot:SetPoint("LEFT", parent, "LEFT", 4, 0)
-		else
-			dot:SetPoint("LEFT", dots[i - 1], "RIGHT", spacing, 0)
-		end
+		dot:SetSize(dotSize, dotSize)
+		dot:SetPoint("LEFT", parent, "LEFT", startX + (i - 1) * pitch, 0)
 		dots[i] = dot
 	end
 	return dots

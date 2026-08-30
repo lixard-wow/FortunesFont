@@ -9,8 +9,7 @@ local MIN_SCALE = 0.55
 local MAX_SCALE = 1.15
 local SPIN_DURATION = 3.4
 local LOOPS = 5
-local MARQUEE_DOT_COUNT = 20
-local MARQUEE_DOT_SPACING = 12
+local MARQUEE_WIDTH = 260
 
 local frame, viewport, resultText, spinButton
 local items = {}
@@ -84,7 +83,7 @@ end
 local function BuildFrame()
 	local UIKit = addon.UIKit
 
-	frame = UIKit.CreatePanel(UIParent, 300, 430, "FortunesFontWheel")
+	frame = UIKit.CreatePanel(UIParent, 300, 450, "FortunesFontWheel")
 	frame:SetPoint("CENTER")
 	frame:SetFrameStrata("DIALOG")
 	frame:SetMovable(true)
@@ -106,21 +105,31 @@ local function BuildFrame()
 		frame:Hide()
 	end)
 
+	-- Lives in the title bar (not the bottom of the window) so it never
+	-- competes for space with the winner announcement below the reel.
+	spinButton = UIKit.CreateButton(titleBar, "SPIN", 54, 22)
+	spinButton:SetPoint("LEFT", 4, 0)
+	spinButton:SetScript("OnClick", function()
+		Wheel:Spin()
+	end)
+
 	tinsert(UISpecialFrames, "FortunesFontWheel")
 
 	local marqueeTopHolder = CreateFrame("Frame", nil, frame)
-	marqueeTopHolder:SetSize(260, 10)
+	marqueeTopHolder:SetSize(MARQUEE_WIDTH, 10)
 	marqueeTopHolder:SetPoint("TOP", 0, -38)
-	UIKit.CreateMarquee(marqueeTopHolder, MARQUEE_DOT_COUNT, MARQUEE_DOT_SPACING)
+	marqueeTopHolder:SetClipsChildren(true)
+	UIKit.CreateMarquee(marqueeTopHolder, MARQUEE_WIDTH, 5)
 
-	viewport = UIKit.CreatePanel(frame, 260, VIEW_HALF_HEIGHT * 2)
+	viewport = UIKit.CreatePanel(frame, MARQUEE_WIDTH, VIEW_HALF_HEIGHT * 2)
 	viewport:SetPoint("TOP", marqueeTopHolder, "BOTTOM", 0, -6)
 	viewport:SetClipsChildren(true)
 
 	local marqueeBottomHolder = CreateFrame("Frame", nil, frame)
-	marqueeBottomHolder:SetSize(260, 10)
+	marqueeBottomHolder:SetSize(MARQUEE_WIDTH, 10)
 	marqueeBottomHolder:SetPoint("TOP", viewport, "BOTTOM", 0, -6)
-	UIKit.CreateMarquee(marqueeBottomHolder, MARQUEE_DOT_COUNT, MARQUEE_DOT_SPACING)
+	marqueeBottomHolder:SetClipsChildren(true)
+	UIKit.CreateMarquee(marqueeBottomHolder, MARQUEE_WIDTH, 5)
 
 	local glowBar = UIKit.CreateFlatTexture(viewport, "ARTWORK", UIKit.COLOR_GOLD)
 	glowBar:SetPoint("LEFT", viewport, "LEFT", 0, 0)
@@ -133,27 +142,25 @@ local function BuildFrame()
 	centerLine:SetPoint("RIGHT", viewport, "RIGHT", 0, 0)
 	centerLine:SetHeight(2)
 
+	-- Plain ASCII, not a Unicode triangle glyph: WoW's default game font has
+	-- no glyph for U+25B8/U+25C4, so they rendered as missing-glyph boxes.
 	local arrowLeft = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
 	arrowLeft:SetPoint("RIGHT", viewport, "LEFT", -2, 0)
-	arrowLeft:SetText("|cffd4ae36\226\150\184|r")
+	arrowLeft:SetText("|cffd4ae36>|r")
 
 	local arrowRight = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalHuge")
 	arrowRight:SetPoint("LEFT", viewport, "RIGHT", 2, 0)
-	arrowRight:SetText("|cffd4ae36\226\151\132|r")
+	arrowRight:SetText("|cffd4ae36<|r")
 
 	resultText = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-	resultText:SetPoint("TOP", marqueeBottomHolder, "BOTTOM", 0, -10)
+	resultText:SetPoint("TOP", marqueeBottomHolder, "BOTTOM", 0, -14)
+	resultText:SetPoint("BOTTOM", frame, "BOTTOM", 0, 16)
 	resultText:SetPoint("LEFT", 12, 0)
 	resultText:SetPoint("RIGHT", -12, 0)
 	resultText:SetJustifyH("CENTER")
+	resultText:SetJustifyV("MIDDLE")
 	resultText:SetTextColor(UIKit.COLOR_GOLD_BRIGHT[1], UIKit.COLOR_GOLD_BRIGHT[2], UIKit.COLOR_GOLD_BRIGHT[3])
 	resultText:SetText("")
-
-	spinButton = UIKit.CreateButton(frame, "SPIN", 120, 30)
-	spinButton:SetPoint("BOTTOM", 0, 16)
-	spinButton:SetScript("OnClick", function()
-		Wheel:Spin()
-	end)
 
 	frame:SetScript("OnUpdate", function(self, dt)
 		if not spinning then
