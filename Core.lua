@@ -66,7 +66,6 @@ SlashCmdList["FORTUNESFONT"] = function(msg)
 		addon.Pool:Clear()
 	elseif msg == "request" then
 		addon.KeystoneSync:Request()
-		addon.ChatParser:RequestKeys()
 	elseif msg == "debug" then
 		addon.debug = not addon.debug
 		addon:Print("Debug logging " .. (addon.debug and "ON" or "OFF"))

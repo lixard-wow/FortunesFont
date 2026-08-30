@@ -15,7 +15,6 @@ Libs/LibKeystone/LibKeystone.lua
 Core.lua
 UIKit.lua
 Pool.lua
-ChatParser.lua
 KeystoneSync.lua
 Minimap.lua
 MainWindow.lua

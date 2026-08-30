@@ -72,7 +72,6 @@ local function BuildFrame()
 	requestButton:SetPoint("BOTTOMLEFT", 12, 12)
 	requestButton:SetScript("OnClick", function()
 		addon.KeystoneSync:Request()
-		addon.ChatParser:RequestKeys()
 	end)
 
 	local spinButton = UIKit.CreateButton(frame, "Spin", 80, 24)
