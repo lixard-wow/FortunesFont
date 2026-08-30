@@ -224,6 +224,11 @@ function Wheel:BuildSequence()
 	end
 
 	local winnerIndex = math.random(1, #entries)
+	addon:Debug(("BuildSequence: %d entries in pool, rolled winnerIndex=%d (%s)"):format(
+		#entries,
+		winnerIndex,
+		entries[winnerIndex] and entries[winnerIndex].name or "?"
+	))
 	local loops = math.max(LOOPS, 3)
 
 	for _ = 1, loops do
