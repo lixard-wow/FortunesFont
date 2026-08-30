@@ -46,7 +46,9 @@ eventFrame:SetScript("OnEvent", function(self, event, ...)
 	elseif event == "PLAYER_ENTERING_WORLD" then
 		addon.Pool:RefreshOwnKey()
 	elseif event == "GROUP_ROSTER_UPDATE" then
-		if not IsInGroup() then
+		if IsInGroup() then
+			addon.KeystoneSync:Request()
+		else
 			addon.Pool:Clear()
 		end
 	elseif event == "BAG_UPDATE_DELAYED" then
@@ -63,6 +65,7 @@ SlashCmdList["FORTUNESFONT"] = function(msg)
 	elseif msg == "clear" then
 		addon.Pool:Clear()
 	elseif msg == "request" then
+		addon.KeystoneSync:Request()
 		addon.ChatParser:RequestKeys()
 	elseif msg == "debug" then
 		addon.debug = not addon.debug

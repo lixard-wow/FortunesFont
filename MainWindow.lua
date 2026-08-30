@@ -89,6 +89,7 @@ local function BuildFrame()
 	requestButton:SetPoint("BOTTOMLEFT", 20, 16)
 	requestButton:SetText("Request")
 	requestButton:SetScript("OnClick", function()
+		addon.KeystoneSync:Request()
 		addon.ChatParser:RequestKeys()
 	end)
 
@@ -142,6 +143,7 @@ function MainWindow:Toggle()
 		frame:Hide()
 	else
 		addon.Pool:RefreshOwnKey()
+		addon.KeystoneSync:Request()
 		self:Refresh()
 		frame:Show()
 	end
@@ -152,6 +154,7 @@ function MainWindow:Show()
 		BuildFrame()
 	end
 	addon.Pool:RefreshOwnKey()
+	addon.KeystoneSync:Request()
 	self:Refresh()
 	frame:Show()
 end
