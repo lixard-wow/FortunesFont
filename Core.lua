@@ -1,6 +1,17 @@
 local addonName, addon = ...
 
 addon.name = addonName
+addon.debug = false
+
+function addon:Print(msg)
+	print("|cff33ff99Fortune's Font:|r " .. tostring(msg))
+end
+
+function addon:Debug(msg)
+	if addon.debug then
+		self:Print("|cff888888[debug]|r " .. tostring(msg))
+	end
+end
 
 local defaults = {
 	minimap = { hide = false },
@@ -51,6 +62,11 @@ SlashCmdList["FORTUNESFONT"] = function(msg)
 		addon.Wheel:Spin()
 	elseif msg == "clear" then
 		addon.Pool:Clear()
+	elseif msg == "request" then
+		addon.ChatParser:RequestKeys()
+	elseif msg == "debug" then
+		addon.debug = not addon.debug
+		addon:Print("Debug logging " .. (addon.debug and "ON" or "OFF"))
 	else
 		addon.MainWindow:Toggle()
 	end

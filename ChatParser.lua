@@ -41,12 +41,30 @@ for _, event in ipairs(CHAT_EVENTS) do
 	chatFrame:RegisterEvent(event)
 end
 
-chatFrame:SetScript("OnEvent", function(self, _event, message, sender)
+chatFrame:SetScript("OnEvent", function(self, event, message, sender)
 	local mapID, level = ParseKeystoneLink(message)
 	if not mapID or not level then
+		addon:Debug(("%s from %s did not contain a keystone link: %s"):format(event, tostring(sender), tostring(message)))
 		return
 	end
 
 	local shortName = Ambiguate(sender, "short")
+	addon:Debug(("parsed keystone from %s: mapID=%d level=%d"):format(shortName, mapID, level))
 	addon.Pool:AddOrUpdate(shortName, mapID, level, "chat-link")
 end)
+
+function ChatParser:RequestKeys()
+	local channel = nil
+	if IsInRaid() then
+		channel = "RAID"
+	elseif IsInGroup() then
+		channel = "PARTY"
+	end
+
+	if not channel then
+		addon:Print("You're not in a group.")
+		return
+	end
+
+	SendChatMessage("Fortune's Font: shift-click your Mythic+ keystone here so it goes in the wheel!", channel)
+end
